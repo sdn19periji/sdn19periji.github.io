@@ -1,0 +1,8 @@
+
+Sitemap: https://apoxi.cam/sitemap.xml
+
+User-agent: *
+Disallow: /blog/tag/
+Disallow: /photos/tag/
+Disallow: /404/
+Disallow: /search
