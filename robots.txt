@@ -1,5 +1,5 @@
 
-Sitemap: https://apoxi.cam/sitemap.xml
+Sitemap: https://sdn19periji.sch.id/sitemap.xml
 
 User-agent: *
 Disallow: /blog/tag/
