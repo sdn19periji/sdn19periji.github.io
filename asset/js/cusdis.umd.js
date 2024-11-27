@@ -834,7 +834,7 @@
             (g = w("a")),
             (g.textContent = `${A("powered_by")}`),
             p(i, "class", "my-8"),
-            p(c, "class", "mt-4 px-4"),
+            p(c, "class", "mt-4 comment"),
             p(u, "class", "my-8"),
             p(g, "class", "underline "),
             p(g, "href", "https://cusdis.com"),

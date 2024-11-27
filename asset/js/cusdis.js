@@ -20,7 +20,7 @@ const makeIframeContent = (target) => {
     </style>
   </head>
   <body>
-    <div id="root" class="bg-base-200 border-x-4 border-base-100 py-4"></div>
+    <div id="root" class="bg-base-200 border-x-4 border-base-100 p-4"></div>
     <script src="${iframeJsPath}" type="module">
       
     <\/script>
