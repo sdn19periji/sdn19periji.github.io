@@ -1,15 +1,37 @@
 date;title;time;category
-2025-04-28;TSSP TA 2024/2025;07:00;TSSP
-2025-04-29;TSSP TA 2024/2025;07:00;TSSP
-2025-04-30;TSSP TA 2024/2025;07:00;TSSP
+2025-04-28;Tes Sumatif Satuan Pendidikan (TSSP);07:00;tssp
+2025-04-29;Tes Sumatif Satuan Pendidikan (TSSP);07:00;tssp
+2025-04-30;Tes Sumatif Satuan Pendidikan (TSSP);07:00;tssp
 2025-05-01;Libur Hari Buruh;07:00;libur nasional
-2025-05-02;Tes Sumatif Satuan Pendidikan (TSSP);07:00;TSSP
-2025-05-03;Tes Sumatif Satuan Pendidikan (TSSP);07:00;TSSP
+2025-05-02;Tes Sumatif Satuan Pendidikan (TSSP);07:00;tssp
+2025-05-03;Tes Sumatif Satuan Pendidikan (TSSP);07:00;tssp
 2025-05-09;Libur Nasional;-;libur nasional
-2025-05-26;UTS, PAS, PAT;07:00;ulangan
-2025-05-26;Pengumuman;07:00;anbk
-2025-05-27;UTS, PAS, PAT;07:00;ulangan
-2025-05-28;UTS, PAS, PAT;07:00;ulangan
-2025-05-29;Libur Nasional;07:00;libur nasional
-2025-05-30;UTS, PAS, PAT;07:00;ulangan
-2025-05-31;UTS, PAS, PAT;07:00;ulangan
+2025-05-26;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-05-27;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-05-28;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-05-29;Libur Nasional;-;libur nasional
+2025-05-30;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-05-31;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-06-02;Pelaksanaan UTS, PAS, PAT;07:00;ulangan
+2025-06-14;Penyerahan Buku Rapor;07:00;rapor
+2025-06-16;Libur semester;-;libur semester
+2025-06-17;Libur semester;-;libur semester
+2025-06-18;Libur semester;-;libur semester
+2025-06-19;Libur semester;-;libur semester
+2025-06-20;Libur semester;-;libur semester
+2025-06-21;Libur semester;-;libur semester
+2025-06-23;Pelaksanaan Penerimaan Peserta Didik Baru (PPDB);07:00;ppdb
+2025-06-24;Pelaksanaan Penerimaan Peserta Didik Baru (PPDB);07:00;ppdb
+2025-06-25;Pelaksanaan Penerimaan Peserta Didik Baru (PPDB);07:00;ppdb
+2025-06-26;Pelaksanaan Penerimaan Peserta Didik Baru (PPDB);07:00;ppdb
+2025-06-27;Libur Nasional;-;libur nasional
+2025-06-28;Pelaksanaan Penerimaan Peserta Didik Baru (PPDB);07:00;ppdb
+2025-06-30;Libur semester;-;libur semester
+2025-07-01;Libur semester;-;libur semester
+2025-07-02;Libur semester;-;libur semester
+2025-07-03;Libur semester;-;libur semester
+2025-07-04;Libur semester;-;libur semester
+2025-07-05;Libur semester;-;libur semester
+2025-07-07;Awal masuk Tahun Ajaran Baru;-;awal masuk semester
+2025-07-08;Awal masuk Tahun Ajaran Baru;-;awal masuk semester
+2025-07-09;Awal masuk Tahun Ajaran Baru;-;awal masuk semester
