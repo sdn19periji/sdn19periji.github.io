@@ -1,1 +1,386 @@
-if(!window.SUPABASE_URL||!window.SUPABASE_KEY)throw new Error("Supabase URL and key are not set! Please configure them in the `.env` file. Copy `.env.example` and rename it to `.env`. Do not set values in `.env.example`!");const db=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_KEY),ls_user_key="COMMENT_USER";let comments_shown=!1;const COMMENT_ITEM_TEMPLATE=get_template("comment-list-item-[[id]]"),REPLY_ITEM_TEMPLATE=get_template("reply-list-item-[[id]]"),REPLY_CONTAINER_TEMPLATE=get_template("reply-list-container-[[id]]"),BLACKLISTED_WORDS=["anjing","babi","bodoh","brengsek","tolol","bangsat","goblok","kampret","bajingan","setan","keparat","sialan","jelek","cacat","gila","idiot","sinting","lemah","kunyuk","monyet","dungu","pikun","klik di sini","gratis","promo","diskon","terbaik","murah","hubungi sekarang","daftar di sini","dijamin","gabung grup","like dan subscribe","follow saya","whatsapp saya","cepat kaya","transfer uang","menangkan hadiah","investasi mudah","pinjaman cepat","https://","http://"];async function send_comment(e){e.preventDefault();const t=e.target||e.currentTarget;if(!t)return;const n=new FormData(t),a=n.get("name")?.toString(),o=n.get("email")?.toString(),r=n.get("description")?.toString(),i=n.get("reply_to")?.toString()||null;if(!a||!r)return void alert("Please fill in your name and comment.");for(const e of BLACKLISTED_WORDS)if(r.toLowerCase().includes(e.toLowerCase()))return void alert("Your comment contains prohibited words.");const l=t.elements.submit;if(!l.disabled)try{l.disabled=!0,l.innerHTML='<span class="loading loading-dots loading-md"></span>';const{error:e}=await db.from("comments").insert({slug:location.pathname,name:a,email:o,description:r,reply_to:i});if(e)throw new Error("Server error");t.elements.description.value="";const n=document.createElement("p");n.className="text-success mt-4",n.innerText="Komentar telah terkirim, terima kasih atas partisipasinya!",t.appendChild(n),setTimeout((()=>n.remove()),5e3),comments_shown&&(i?load_replies(i).catch(console.error):load_comments().catch(console.error)),update_comment_count(),localStorage.setItem(ls_user_key,JSON.stringify({name:a,email:o}))}catch(e){console.error(`An error occurred while submitting the comment: ${e.message||"Unknown error"}`),alert("Failed to submit the comment.")}finally{l.disabled=!1,l.innerHTML=i?"Reply":"Send"}}async function load_comments(){const e=document.getElementById("comment-list-container");if(!e)return void console.warn("Comment list container element was null");const{data:t,error:n}=await db.from("comments_view").select("id,name,description,created_at,verified").eq("slug",location.pathname).is("reply_to",null).order("created_at",{ascending:!1});if(n)throw n;if(t?.length){e.innerHTML="";for(const n of t){n.relative_time=relative_time(n.created_at),n.created_at=new Date(n.created_at).toLocaleString();const t=replace_placeholders(COMMENT_ITEM_TEMPLATE,n);e.appendChild(t)}}else e.innerHTML="Belum ada komentar, jadilah yang pertama."}function reply_comment(e){const t=e.dataset.commentId,n=`comment-reply-${t}`,a=document.getElementById(n);if(a)return a.nextElementSibling.remove(),a.remove(),void(e.innerText="Reply");const o=document.getElementById("comment-form");if(!o)return;const r=o.cloneNode(!0);r.id=n,r.classList?.add("pl-4","mt-4"),r.elements.submit.innerText="Balas",r.elements.reply_to.value=t,r.onsubmit=send_comment;const i=document.getElementById(`comment-list-item-${t}`);i?.insertAdjacentElement("afterend",r),e.innerText="Sembunyikan",load_replies(t).catch(console.error)}async function load_replies(e){const t=document.getElementById(`comment-reply-${e}`);if(!t)return;const n=document.createElement("div");n.innerHTML='<span class="loading loading-dots loading-md ml-5"></span>',t.insertAdjacentElement("afterend",n);const{data:a,error:o}=await db.from("comments_view").select("name,description,created_at,verified").eq("slug",location.pathname).eq("reply_to",e).order("created_at",{ascending:!1});if(o)throw o;if(!a?.length)return void(n.innerHTML='<em class="text-sm ml-5">Tidak ada balasan</em>');n.remove();const r=`reply-list-container-${e}`;document.getElementById(r)?.remove();const i=replace_placeholders(REPLY_CONTAINER_TEMPLATE,{id:e});for(const e of a){e.relative_time=relative_time(e.created_at),e.created_at=new Date(e.created_at).toLocaleString();const t=replace_placeholders(REPLY_ITEM_TEMPLATE,e);i.appendChild(t)}t.insertAdjacentElement("afterend",i)}async function see_comments(e){const t=e.currentTarget||e.target;if(t)try{t.disabled=!0,t.innerHTML='<span class="loading loading-dots loading-md"></span>',await load_comments(),comments_shown=!0,t.classList.add("hidden")}catch(e){console.error(`An error occurred while loading comments: ${e.message||"Unknown error"}`),alert("Failed to load comments.")}finally{t.disabled=!1,t.innerHTML="See all comments"}}async function update_comment_count(){const e=document.querySelectorAll(".indicator-item");if(e.length)try{const{count:t,error:n}=await db.from("comments").select("*",{count:"exact",head:!0}).eq("slug",location.pathname).or("hidden.is.null,hidden.eq.false");if(n)throw n;const a=t>99?"99+":t?.toString()||"0";e.forEach((e=>{t>0?(e.textContent=a,e.classList.remove("hidden")):e.classList.add("hidden")}))}catch(t){console.error("Failed to update comment count:",t.message||t),e.forEach((e=>{e.classList.add("hidden")}))}}function replace_placeholders(e,t){const n=new String(e).replace(/\[\[([^\]]+)\]\]/g,((e,n)=>{let a=!1;n.startsWith("!")&&(a=!0,n=n.slice(1));let o=n in t?t[n]:"";return a&&(o=!o),o}));return(new DOMParser).parseFromString(n,"text/html").body.firstElementChild}function get_template(e){const t=document.getElementById(e);if(!t)throw new Error(`Template with given id (#${e}) was not found`);const n=t.cloneNode(!0);return n.hidden=!1,t.remove(),n.outerHTML}function relative_time(e){e="string"==typeof e?new Date(e):e;const t=new Date,n=Math.floor((t-e)/1e3),a=[{label:"detik",value:1},{label:"menit",value:60},{label:"jam",value:3600},{label:"hari",value:86400},{label:"bulan",value:2592e3},{label:"tahun",value:31536e3}];for(let e=a.length-1;e>=0;e--){const t=a[e].value,o=a[e].label;if(n>=t){const e=Math.floor(n/t);return`${e} ${1!==e?`${o}`:o} yang lalu`}}return"Baru saja"}window.addEventListener("load",(()=>{const e=document.getElementById("comment-form");e.onsubmit=async e=>{await send_comment(e),await update_comment_count()};const t=JSON.parse(localStorage.getItem(ls_user_key)||"{}");e.elements.name.value=t.name||"",e.elements.email.value=t.email||"";document.getElementById("comment-list-loader").onclick=see_comments,update_comment_count()}));
+if (!window.SUPABASE_URL || !window.SUPABASE_KEY) {
+	throw new Error(
+		"Supabase URL and key are not set! Please configure them in the `.env` file. " +
+			"Copy `.env.example` and rename it to `.env`. Do not set values in `.env.example`!"
+	);
+}
+
+const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+const ls_user_key = "COMMENT_USER";
+let comments_shown = false;
+
+const COMMENT_ITEM_TEMPLATE = get_template("comment-list-item-[[id]]");
+const REPLY_ITEM_TEMPLATE = get_template("reply-list-item-[[id]]");
+const REPLY_CONTAINER_TEMPLATE = get_template("reply-list-container-[[id]]");
+
+const BLACKLISTED_WORDS = [
+	// Kata kasar
+	"anjing", "babi", "bodoh", "brengsek", "tolol", "bangsat", "goblok", "kampret", "bajingan", 
+	"setan", "keparat", "sialan", "jelek", "cacat", "gila", "idiot", "sinting", "lemah", 
+	"kunyuk", "monyet", "dungu", "pikun",
+
+	// Kata spam
+	"klik di sini", "gratis", "promo", "diskon", "terbaik", "murah", "hubungi sekarang", 
+	"daftar di sini", "dijamin", "gabung grup", "like dan subscribe", "follow saya", 
+	"whatsapp saya", "cepat kaya", "transfer uang", "menangkan hadiah", 
+	"investasi mudah", "pinjaman cepat", "https://", "http://"
+];
+
+/**
+ * Send comment to the API
+ *
+ * @param {SubmitEvent} e
+ */
+async function send_comment(e) {
+	e.preventDefault();
+
+	/** @type {HTMLFormElement} */
+	const form = e.target || e.currentTarget;
+	if (!form) return;
+
+	const fd = new FormData(form);
+	const name = fd.get("name")?.toString();
+	const email = fd.get("email")?.toString();
+	const description = fd.get("description")?.toString();
+	const reply_to = fd.get("reply_to")?.toString() || null;
+
+	if (!name || !description) {
+		alert("Please fill in your name and comment.");
+		return;
+	}
+
+	// Validate blacklist
+	for (const word of BLACKLISTED_WORDS) {
+		if (description.toLowerCase().includes(word.toLowerCase())) {
+			alert(`Your comment contains prohibited words.`);
+			return;
+		}
+	}
+
+	/** @type {HTMLButtonElement} */
+	const submit_btn = form.elements["submit"];
+	if (submit_btn.disabled) return;
+
+	try {
+		submit_btn.disabled = true;
+		submit_btn.innerHTML = `<span class="loading loading-dots loading-md"></span>`;
+
+		const { error } = await db.from("comments").insert({
+			slug: location.pathname,
+			name,
+			email,
+			description,
+			reply_to,
+		});
+		if (error) throw new Error("Server error");
+
+		form.elements["description"].value = ""; // Reset comment
+
+		// Show success message
+		const success_message = document.createElement("p");
+		success_message.className = "text-success mt-4";
+		success_message.innerText =
+			"Komentar telah terkirim, terima kasih atas partisipasinya!";
+		form.appendChild(success_message);
+
+		// Remove success message after a few seconds
+		setTimeout(() => success_message.remove(), 5000);
+
+		if (comments_shown) {
+			if (reply_to) {
+				load_replies(reply_to).catch(console.error);
+			} else {
+				load_comments().catch(console.error); // Load new comments
+			}
+		}
+		update_comment_count(); // Update comment count
+		localStorage.setItem(ls_user_key, JSON.stringify({ name, email })); // Save user data to localStorage
+	} catch (err) {
+		console.error(
+			`An error occurred while submitting the comment: ${
+				err.message || "Unknown error"
+			}`
+		);
+		alert(`Failed to submit the comment.`);
+	} finally {
+		submit_btn.disabled = false;
+		submit_btn.innerHTML = reply_to ? "Reply" : "Send";
+	}
+}
+
+/**
+ * Load comments from API
+ */
+async function load_comments() {
+	const container = document.getElementById("comment-list-container");
+	if (!container) {
+		console.warn(`Comment list container element was null`);
+		return;
+	}
+
+	const { data, error } = await db
+		.from("comments_view")
+		.select("id,name,description,created_at,verified")
+		.eq("slug", location.pathname)
+		.is("reply_to", null)
+		.order("created_at", { ascending: false });
+	if (error) throw error;
+
+	if (!data?.length) {
+		container.innerHTML = `Belum ada komentar, jadilah yang pertama.`;
+		return;
+	}
+
+	container.innerHTML = ``;
+	for (const comment of data) {
+		// simple datetime format, you can change date format here.
+		comment.relative_time = relative_time(comment.created_at);
+		comment.created_at = new Date(comment.created_at).toLocaleString();
+		const comment_el = replace_placeholders(COMMENT_ITEM_TEMPLATE, comment);
+		container.appendChild(comment_el);
+	}
+}
+
+/**
+ * Reply a comment by its id
+ *
+ * @param {HTMLButtonElement} btn
+ */
+function reply_comment(btn) {
+	const id = btn.dataset["commentId"];
+	const form_id = `comment-reply-${id}`;
+	const existing_reply_form = document.getElementById(form_id);
+	if (existing_reply_form) {
+		existing_reply_form.nextElementSibling.remove();
+		existing_reply_form.remove();
+		btn.innerText = "Reply";
+		return;
+	}
+
+	const comment_form = document.getElementById("comment-form");
+	if (!comment_form) return;
+
+	/** @type {HTMLFormElement} */
+	const reply_form = comment_form.cloneNode(true);
+	reply_form.id = form_id;
+	reply_form.classList?.add("pl-4", "mt-4");
+	reply_form.elements["submit"].innerText = "Balas";
+	reply_form.elements["reply_to"].value = id;
+	reply_form.onsubmit = send_comment;
+
+	const comment_item = document.getElementById(`comment-list-item-${id}`);
+	comment_item?.insertAdjacentElement("afterend", reply_form);
+	btn.innerText = "Sembunyikan";
+
+	load_replies(id).catch(console.error);
+}
+
+/**
+ * Load comment replies by parent id
+ *
+ * @param {number} id
+ */
+async function load_replies(id) {
+	const reply_form = document.getElementById(`comment-reply-${id}`);
+	if (!reply_form) return;
+
+	const info_el = document.createElement("div");
+	info_el.innerHTML = `<span class="loading loading-dots loading-md ml-5"></span>`;
+	reply_form.insertAdjacentElement("afterend", info_el);
+
+	const { data, error } = await db
+		.from("comments_view")
+		.select("name,description,created_at,verified")
+		.eq("slug", location.pathname)
+		.eq("reply_to", id)
+		.order("created_at", { ascending: false });
+
+	if (error) throw error;
+	if (!data?.length) {
+		info_el.innerHTML = `<em class="text-sm ml-5">Tidak ada balasan</em>`;
+		return;
+	}
+
+	info_el.remove();
+
+	const container_id = `reply-list-container-${id}`;
+	document.getElementById(container_id)?.remove();
+
+	const container = replace_placeholders(REPLY_CONTAINER_TEMPLATE, { id });
+	for (const reply of data) {
+		// simple datetime format, you can change date format here.
+		reply.relative_time = relative_time(reply.created_at);
+		reply.created_at = new Date(reply.created_at).toLocaleString();
+		const comment_el = replace_placeholders(REPLY_ITEM_TEMPLATE, reply);
+		container.appendChild(comment_el);
+	}
+	reply_form.insertAdjacentElement("afterend", container);
+}
+
+/**
+ * Show all comments
+ *
+ * @param {MouseEvent} e
+ */
+async function see_comments(e) {
+	/** @type {HTMLButtonElement} */
+	const btn = e.currentTarget || e.target;
+	if (!btn) return;
+
+	try {
+		btn.disabled = true;
+		btn.innerHTML = `<span class="loading loading-dots loading-md"></span>`;
+
+		await load_comments();
+		comments_shown = true;
+		btn.classList.add("hidden");
+	} catch (err) {
+		console.error(
+			`An error occurred while loading comments: ${
+				err.message || "Unknown error"
+			}`
+		);
+		alert(`Failed to load comments.`);
+	} finally {
+		btn.disabled = false;
+		btn.innerHTML = `See all comments`;
+	}
+}
+
+/**
+ * Count comments and update all indicators
+ */
+async function update_comment_count() {
+	const indicators = document.querySelectorAll(".indicator-item");
+	if (!indicators.length) return;
+
+	try {
+		const { count, error } = await db
+			.from("comments")
+			.select("*", { count: "exact", head: true })
+			.eq("slug", location.pathname)
+			.or(`hidden.is.null,hidden.eq.false`);
+		if (error) throw error;
+
+		// Format comment count
+		const display_count = count > 99 ? "99+" : count?.toString() || "0";
+
+		// Update or hide indicators
+		indicators.forEach((indicator) => {
+			if (count > 0) {
+				indicator.textContent = display_count;
+				indicator.classList.remove("hidden");
+			} else {
+				indicator.classList.add("hidden");
+			}
+		});
+	} catch (err) {
+		console.error("Failed to update comment count:", err.message || err);
+		// Hide indicators on error
+		indicators.forEach((indicator) => {
+			indicator.classList.add("hidden");
+		});
+	}
+}
+
+/**
+ * Fill custom template placeholders with actual values
+ *
+ * @param {string} raw
+ * @param {object} data
+ */
+function replace_placeholders(raw, data) {
+	// replace all [[ ... ]] with values of data
+	const filled = new String(raw).replace(/\[\[([^\]]+)\]\]/g, (match, key) => {
+		let negated = false;
+
+		// Check if the key starts with '!'
+		if (key.startsWith("!")) {
+			negated = true;
+			key = key.slice(1); // Remove '!' from the key
+		}
+
+		// Get the value from data
+		let value = key in data ? data[key] : "";
+
+		// If negation is true, negate the value
+		if (negated) {
+			value = !value;
+		}
+
+		return value;
+	});
+
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(filled, "text/html");
+	return doc.body.firstElementChild;
+}
+
+/**
+ *
+ * @param {string} id
+ * @returns {string}
+ */
+function get_template(id) {
+	const el = document.getElementById(id);
+	if (!el) throw new Error(`Template with given id (#${id}) was not found`);
+	const template = el.cloneNode(true);
+	template.hidden = false;
+	el.remove();
+	return template.outerHTML;
+}
+
+/**
+ * Relative time from now
+ *
+ * @param {Date | string} date
+ * @returns {string}
+ */
+function relative_time(date) {
+	date = typeof date === "string" ? new Date(date) : date;
+	const now = new Date();
+	const diffInSeconds = Math.floor((now - date) / 1000); // Difference in seconds
+
+	// Time unit values
+	const units = [
+		{ label: "detik", value: 1 },
+		{ label: "menit", value: 60 },
+		{ label: "jam", value: 3600 },
+		{ label: "hari", value: 86400 },
+		{ label: "bulan", value: 2592000 }, // ~30 days
+		{ label: "tahun", value: 31536000 }, // ~365 days
+	];
+
+	// Loop through the units and determine the most appropriate one
+	for (let i = units.length - 1; i >= 0; i--) {
+		const unitValue = units[i].value;
+		const unitLabel = units[i].label;
+
+		// Check if the difference is greater than the unit value
+		if (diffInSeconds >= unitValue) {
+			const unitCount = Math.floor(diffInSeconds / unitValue);
+			const plural = unitCount !== 1 ? `${unitLabel}` : unitLabel;
+			return `${unitCount} ${plural} yang lalu`;
+		}
+	}
+
+	return "Baru saja"; // If the difference is less than a second
+}
+
+// Event listener on page load
+window.addEventListener("load", () => {
+	const form = document.getElementById("comment-form");
+	form.onsubmit = async (e) => {
+		await send_comment(e);
+		await update_comment_count(); // Update comment count after a new comment is submitted
+	};
+
+	const user = JSON.parse(localStorage.getItem(ls_user_key) || "{}");
+	form.elements["name"].value = user.name || "";
+	form.elements["email"].value = user.email || "";
+
+	const loader = document.getElementById("comment-list-loader");
+	loader.onclick = see_comments;
+
+	update_comment_count(); // Update comment count on page load
+});
