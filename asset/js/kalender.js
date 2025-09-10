@@ -23,16 +23,17 @@ let month = today.getMonth();
 let year = today.getFullYear();
 
 const categoryColors = {
-  "ppdb": "border-b-4 border-b-green-500",
+  ppdb: "border-b-4 border-b-green-500",
   "awal masuk semester": "border-b-4 border-b-blue-500",
   "libur nasional": "border-b-4 border-b-red-500",
-  "rapor": "border-b-4 border-b-yellow-500",
-  "tssp": "border-b-4 border-b-purple-500",
+  rapor: "border-b-4 border-b-yellow-500",
+  tssp: "border-b-4 border-b-purple-500",
   "libur puasa": "border-b-4 border-b-orange-500",
-  "ulangan": "border-b-4 border-b-cyan-500",
+  ulangan: "border-b-4 border-b-cyan-500",
   "libur semester": "border-b-4 border-b-teal-500",
-  "anbk": "border-b-4 border-b-indigo-500",
-  "hari minggu": "border-b-4 border-b-gray-500"
+  anbk: "border-b-4 border-b-indigo-500",
+  "hari minggu": "border-b-4 border-b-gray-500",
+  "hari sabtu": "border-b-4 border-b-gray-500",
 };
 
 const months = [
@@ -52,18 +53,20 @@ const months = [
 
 // using CSV instead of JSON for events
 async function fetchEvents() {
-  const csv = await fetch('./kegiatan.csv').then(r => r.text());
+  const csv = await fetch("./kegiatan.csv").then((r) => r.text());
   return simpleCSVParser(csv);
 }
 
 function simpleCSVParser(csvText) {
-  const lines = csvText.trim().split('\n').filter(Boolean);
+  const lines = csvText.trim().split("\n").filter(Boolean);
   const header = lines.shift(); // skip header
   const eventsByDate = {};
 
   for (const line of lines) {
-    const [dateStr, title, time, category] = line.split(';').map(s => s.trim());
-    const [year, month, day] = dateStr.split('-').map(Number);
+    const [dateStr, title, time, category] = line
+      .split(";")
+      .map((s) => s.trim());
+    const [year, month, day] = dateStr.split("-").map(Number);
 
     const key = `${year}-${month}-${day}`;
     if (!eventsByDate[key]) {
@@ -71,7 +74,7 @@ function simpleCSVParser(csvText) {
         day,
         month,
         year,
-        events: []
+        events: [],
       };
     }
 
@@ -82,13 +85,15 @@ function simpleCSVParser(csvText) {
 }
 
 let eventsArr = [];
-fetchEvents().then(data => {
-  eventsArr = data;
-  getEvents();
-  initCalendar();
-}).catch(error => {
-  console.error("Failed to initialize events:", error);
-});
+fetchEvents()
+  .then((data) => {
+    eventsArr = data;
+    getEvents();
+    initCalendar();
+  })
+  .catch((error) => {
+    console.error("Failed to initialize events:", error);
+  });
 
 //function to add days in days with class day and prev-date next-date on previous month and next month days and active on today
 function initCalendar() {
@@ -109,7 +114,7 @@ function initCalendar() {
     const prevDate = prevDays - x + 1;
     let event = false;
     let eventCategory = "";
-  
+
     if (Array.isArray(eventsArr)) {
       eventsArr.forEach((eventObj) => {
         if (
@@ -122,14 +127,15 @@ function initCalendar() {
         }
       });
     }
-  
+
     const categoryColor = categoryColors[eventCategory] || "";
-    const isSunday = new Date(year, month - 1, prevDate).getDay() === 0 ? "text-error" : "";
-  
+    const dayOfWeek = new Date(year, month - 1, prevDate).getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 ? "text-error" : ""; // 0 = Minggu, 6 = Sabtu
+
     if (event) {
-      days += `<div class="day prev-date event btn btn-sm btn-ghost ${categoryColor} ${isSunday}">${prevDate}</div>`;
+      days += `<div class="day prev-date event btn btn-sm btn-ghost ${categoryColor} ${isWeekend}">${prevDate}</div>`;
     } else {
-      days += `<div class="day prev-date btn btn-sm btn-ghost ${isSunday}">${prevDate}</div>`;
+      days += `<div class="day prev-date btn btn-sm btn-ghost ${isWeekend}">${prevDate}</div>`;
     }
   }
 
@@ -137,7 +143,7 @@ function initCalendar() {
   for (let i = 1; i <= lastDate; i++) {
     let event = false;
     let eventCategory = "";
-  
+
     if (Array.isArray(eventsArr)) {
       eventsArr.forEach((eventObj) => {
         if (
@@ -150,10 +156,11 @@ function initCalendar() {
         }
       });
     }
-  
+
     const categoryColor = categoryColors[eventCategory] || "";
-    const isSunday = new Date(year, month, i).getDay() === 0 ? "text-error" : "";
-  
+    const dayOfWeek = new Date(year, month, i).getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 ? "text-error" : ""; // 0 = Minggu, 6 = Sabtu
+
     if (
       i === new Date().getDate() &&
       year === new Date().getFullYear() &&
@@ -163,15 +170,15 @@ function initCalendar() {
       getActiveDay(i);
       updateEvents(i);
       if (event) {
-        days += `<div class="day today active event btn btn-sm btn-secondary dark:btn-info border-b-4 border-b-base-100 dark:border-b-base-content ${categoryColor} ${isSunday}">${i}</div>`;
+        days += `<div class="day today active event btn btn-sm btn-secondary dark:btn-info border-b-4 border-b-base-100 dark:border-b-base-content ${categoryColor} ${isWeekend}">${i}</div>`;
       } else {
-        days += `<div class="day today active btn btn-sm btn-secondary dark:btn-primary ${isSunday}">${i}</div>`;
+        days += `<div class="day today active btn btn-sm btn-secondary dark:btn-primary ${isWeekend}">${i}</div>`;
       }
     } else {
       if (event) {
-        days += `<div class="day event btn btn-sm btn-ghost border-b-4 border-b-accent ${categoryColor} ${isSunday}">${i}</div>`;
+        days += `<div class="day event btn btn-sm btn-ghost border-b-4 border-b-accent ${categoryColor} ${isWeekend}">${i}</div>`;
       } else {
-        days += `<div class="day btn btn-sm btn-ghost ${isSunday}">${i}</div>`;
+        days += `<div class="day btn btn-sm btn-ghost ${isWeekend}">${i}</div>`;
       }
     }
   }
@@ -180,7 +187,7 @@ function initCalendar() {
   for (let j = 1; j <= nextDays; j++) {
     let event = false;
     let eventCategory = "";
-  
+
     if (Array.isArray(eventsArr)) {
       eventsArr.forEach((eventObj) => {
         if (
@@ -193,14 +200,15 @@ function initCalendar() {
         }
       });
     }
-  
+
     const categoryColor = categoryColors[eventCategory] || "";
-    const isSunday = new Date(year, month + 1, j).getDay() === 0 ? "text-error" : "";
-  
+    const dayOfWeek = new Date(year, month + 1, j).getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 ? "text-error" : ""; // 0 = Minggu, 6 = Sabtu
+
     if (event) {
-      days += `<div class="day next-date event btn btn-sm btn-ghost ${categoryColor} ${isSunday}">${j}</div>`;
+      days += `<div class="day next-date event btn btn-sm btn-ghost ${categoryColor} ${isWeekend}">${j}</div>`;
     } else {
-      days += `<div class="day next-date btn btn-sm btn-ghost ${isSunday}">${j}</div>`;
+      days += `<div class="day next-date btn btn-sm btn-ghost ${isWeekend}">${j}</div>`;
     }
   }
 
@@ -358,7 +366,8 @@ function updateEvents(date) {
         if (event.events.length > 1) {
           // Jika ada lebih dari satu event, gunakan <li>
           event.events.forEach((event) => {
-            const categoryColor = categoryColors[event.category] || "bg-gray-300";
+            const categoryColor =
+              categoryColors[event.category] || "bg-gray-300";
             events += `<li class="event list-disc ml-4">
                 <div class="title">
                   <div class="event-title">${event.title}</div>
@@ -371,7 +380,8 @@ function updateEvents(date) {
         } else {
           // Jika hanya satu event, gunakan <div>
           const singleEvent = event.events[0];
-          const categoryColor = categoryColors[singleEvent.category] || "bg-gray-300";
+          const categoryColor =
+            categoryColors[singleEvent.category] || "bg-gray-300";
           events += `<div class="event">
               <div class="title">
                 <div class="event-title">${singleEvent.title}</div>
